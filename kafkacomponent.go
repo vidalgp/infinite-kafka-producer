@@ -8,7 +8,7 @@ import (
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
-func produceToKafka(messages []string) {
+func produceToKafka(messages string) {
 
 	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost:9092"})
 	if err != nil {
@@ -32,10 +32,10 @@ func produceToKafka(messages []string) {
 	}()
 
 	// Produce messages to topic (asynchronously)
-	topic := "test-topic-b"
-	welcomeMesagge := []string{"Welcome", "to Kafka-Go"}
+	topic := "test-topic-a"
+	welcomeMesagge := []string{messages, messages}
 
-	allMessages := append(welcomeMesagge, messages...)
+	allMessages := append([]string{messages}, welcomeMesagge...)
 	for {
 		for _, word := range allMessages {
 

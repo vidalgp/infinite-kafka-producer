@@ -5,10 +5,12 @@ import (
 	"os"
 )
 
-const KEY string = "0123456789ABCDEF0123456789ABCDEF"
-const IV string = "0123456789ABCDEF"
+const KEY string = "1234567890ABCDEF1234567890ABCDEF"
+const IV string = "1234567890ABCDEF"
 
 func main() {
+	aesOperator, _ := NewAesOperator(KEY, IV)
+
 	fmt.Println("filepath")
 	filepath := os.Args[1]
 	fmt.Println(filepath)
@@ -16,11 +18,10 @@ func main() {
 	lines, _ := readFile(filepath)
 
 	for _, l := range lines {
-		fmt.Println(l)
+		fmt.Println(l, "~")
 	}
 
-	encrypted := encryptAES([]byte(KEY), []byte(IV), lines)
-	encoded := encodeBase64(encrypted)
+	encrypted := aesOperator.encrypt(lines[0])
 
-	produceToKafka(encoded)
+	produceToKafka(encrypted)
 }
