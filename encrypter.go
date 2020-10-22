@@ -13,42 +13,43 @@ type encrypter interface {
 	encrypt(s string) string
 }
 
-type aesOperator struct {
-	encrypter cipher.BlockMode
-	decrypter cipher.BlockMode
+type aesPass struct {
+	key []byte
+	iv  []byte
 }
 
-func NewAesOperator(key string, iv string) (encrypter, error) {
-	ivec := []byte(iv)
-	bkey := []byte(key)
+type aesOperator struct {
+	pass  *aesPass
+	block cipher.Block
+}
 
-	block, err := aes.NewCipher(bkey)
+func NewAesOperator(key []byte, iv []byte) (encrypter, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 
 	operator := aesOperator{
-		encrypter: cipher.NewCBCEncrypter(block, ivec),
-		decrypter: cipher.NewCBCDecrypter(block, ivec),
+		pass:  &aesPass{key: key, iv: iv},
+		block: block,
 	}
 
 	return operator, nil
 }
 
 func (e aesOperator) encrypt(text string) string {
+	encrypter := cipher.NewCBCEncrypter(e.block, e.pass.iv)
 	bytetext := []byte(text)
-
 	paddedtext := PKCS5Padding(bytetext, aes.BlockSize)
-
 	ciphertext := make([]byte, len(paddedtext))
-	e.encrypter.CryptBlocks(ciphertext, paddedtext)
-
+	encrypter.CryptBlocks(ciphertext, paddedtext)
 	encrypted := base64.StdEncoding.EncodeToString(ciphertext)
 
 	return encrypted
 }
 
 func (e aesOperator) decrypt(text string) string {
+	decrypter := cipher.NewCBCDecrypter(e.block, e.pass.iv)
 	ciphertext, err := base64.StdEncoding.DecodeString(text)
 	if err != nil {
 		fmt.Println("decode error:", err)
@@ -63,10 +64,8 @@ func (e aesOperator) decrypt(text string) string {
 		panic("ciphertext is not a multiple of the block size")
 	}
 
-	e.decrypter.CryptBlocks(ciphertext, ciphertext)
-
+	decrypter.CryptBlocks(ciphertext, ciphertext)
 	trimmed := PKCS5Trimming(ciphertext)
-
 	return string(trimmed)
 }
 
